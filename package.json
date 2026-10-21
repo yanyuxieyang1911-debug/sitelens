@@ -1,0 +1,14 @@
+{
+  "name": "sitelens",
+  "version": "1.0.0",
+  "description": "SiteLens 独立站分析工具：输入域名，自动抓取性能/SEO/技术栈/营销追踪数据，估算流量并生成修改建议报告",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "analyze": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

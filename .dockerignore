@@ -1,0 +1,10 @@
+# 不纳入镜像的文件
+.cache/
+reports/
+test/
+node_modules/
+.workbuddy/
+.git/
+*.log
+.gitignore
+.DS_Store

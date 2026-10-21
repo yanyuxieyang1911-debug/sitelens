@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SiteLens · 独立站流量分析工具</title>
+<script src="vendor/echarts.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --border: #e5e7eb; --text: #1f2937;
+    --muted: #6b7280; --accent: #2563eb; --accent-d: #1d4ed8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    line-height: 1.6;
+  }
+  .topbar {
+    position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,.92); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border); padding: 10px 20px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .brand { font-size: 17px; font-weight: 800; letter-spacing: .2px; display: flex; align-items: center; gap: 8px; }
+  .brand small { font-size: 12px; font-weight: 500; color: var(--muted); }
+  .domain-form { display: flex; gap: 8px; flex: 1; min-width: 320px; max-width: 560px; margin-left: auto; }
+  .domain-form input {
+    flex: 1; border: 1px solid var(--border); border-radius: 10px; padding: 9px 14px; font-size: 14px;
+    background: #fff; color: var(--text); outline: none; transition: border-color .15s;
+  }
+  .domain-form input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+  .btn {
+    border: none; border-radius: 10px; padding: 9px 20px; font-size: 14px; font-weight: 600;
+    background: var(--accent); color: #fff; cursor: pointer; transition: background .15s; white-space: nowrap;
+  }
+  .btn:hover { background: var(--accent-d); }
+  .btn:disabled { background: #93c5fd; cursor: not-allowed; }
+  .btn.ghost { background: #fff; color: var(--text); border: 1px solid var(--border); }
+  .btn.ghost:hover { background: #f8fafc; }
+  main { max-width: 1080px; margin: 0 auto; padding: 22px 20px 40px; }
+  .hero { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 26px 28px; margin-bottom: 16px; }
+  .hero h1 { font-size: 22px; margin: 0 0 8px; }
+  .hero p { color: var(--muted); font-size: 14px; margin: 0 0 14px; max-width: 760px; }
+  .examples { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+  .examples button {
+    border: 1px solid var(--border); background: #f8fafc; border-radius: 99px; padding: 4px 13px;
+    font-size: 12.5px; color: #334155; cursor: pointer;
+  }
+  .examples button:hover { border-color: var(--accent); color: var(--accent); }
+  .features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 860px) { .features { grid-template-columns: repeat(2, 1fr); } }
+  .feature { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .feature b { font-size: 13.5px; display: block; margin-bottom: 3px; }
+  .feature span { font-size: 12px; color: var(--muted); }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; }
+  .steps { list-style: none; margin: 0; padding: 0; }
+  .steps li { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 13.5px; border-bottom: 1px dashed #f1f5f9; }
+  .steps li:last-child { border-bottom: none; }
+  .steps .ic { width: 20px; text-align: center; flex: none; }
+  .steps .detail { color: var(--muted); font-size: 12px; margin-left: auto; text-align: right; }
+  .spinner { width: 14px; height: 14px; border: 2px solid #dbeafe; border-top-color: var(--accent); border-radius: 50%; display: inline-block; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .errbox { background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; color: #991b1b; font-size: 14px; }
+  .errbox b { display: block; margin-bottom: 4px; }
+  .report-actions { display: flex; gap: 10px; margin-bottom: 14px; }
+  .banner { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; font-size: 13.5px; line-height: 1.7; }
+  .banner b { color: #7c2d12; }
+  .banner code { background: #ffedd5; padding: 1px 6px; border-radius: 5px; font-size: 12.5px; }
+  .banner a { color: var(--accent); font-weight: 600; }
+  footer.site { max-width: 1080px; margin: 0 auto; padding: 0 20px 30px; color: #9ca3af; font-size: 12px; }
+  @media print {
+    .topbar, .hero, .features, .panel, .errbox, .report-actions, footer.site { display: none !important; }
+    main { padding: 0; max-width: none; }
+    body { background: #fff; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar no-print">
+  <div class="brand">📊 SiteLens <small>独立站流量分析工具</small></div>
+  <form class="domain-form" id="analyzeForm">
+    <input id="domainInput" type="text" placeholder="输入域名，例如 allbirds.com" autocomplete="off" spellcheck="false">
+    <button class="btn" id="analyzeBtn" type="submit">开始分析</button>
+  </form>
+</header>
+
+<main>
+  <div class="banner no-print" id="statusBanner" hidden></div>
+  <section class="hero no-print" id="hero">
+    <h1>输入一个域名，60 秒内拿到一份独立站体检报告</h1>
+    <p>直连测量性能（TTFB / 压缩 / 重定向链）、解析 SEO 要素、识别建站系统与广告像素（GA4 / Meta / TikTok…）、查询 Tranco 全球排名并估算访问量，最后给出按 P0/P1/P2 分级的修改建议。全程零依赖本地运行，数据不经过第三方。</p>
+    <div class="examples">
+      <span>试试：</span>
+      <button type="button" data-d="example.com">example.com</button>
+      <button type="button" data-d="allbirds.com">allbirds.com（Shopify）</button>
+      <button type="button" data-d="www.anker.com">www.anker.com（品牌大站）</button>
+      <button type="button" data-d="gymshark.com">gymshark.com</button>
+    </div>
+  </section>
+
+  <div class="features no-print">
+    <div class="feature"><b>⚡ 性能实测</b><span>TTFB、页面体积、压缩率、重定向链逐跳计时</span></div>
+    <div class="feature"><b>🔍 SEO 体检</b><span>标题/描述/H1/图片 ALT/结构化数据等 18 项</span></div>
+    <div class="feature"><b>📈 追踪覆盖</b><span>GA4/GTM/Meta/TikTok 像素与支付、客服组件识别</span></div>
+    <div class="feature"><b>🌐 流量估算</b><span>Tranco 排名 + 经验模型，明确标注估算口径</span></div>
+  </div>
+
+  <section class="panel no-print" id="progressPanel" hidden>
+    <b style="font-size:14px">分析进行中… <span id="elapsed" style="color:#6b7280;font-weight:400;font-size:12px"></span></b>
+    <ul class="steps" id="stepList"></ul>
+  </section>
+
+  <div class="errbox no-print" id="errorPanel" hidden></div>
+
+  <div class="report-actions no-print" id="reportActions" hidden>
+    <button class="btn ghost" id="exportBtn" type="button">⬇ 导出独立 HTML 报告</button>
+    <button class="btn ghost" id="printBtn" type="button">🖨 打印 / 存 PDF</button>
+  </div>
+
+  <section id="reportMount"></section>
+</main>
+
+<footer class="site no-print">
+  SiteLens · 零依赖 Node 工具（node server.js 启动）· 流量数据：Tranco 排名（一手）+ 模型估算（已标注）· PageSpeed / Common Crawl / RDAP 免费公开源
+</footer>
+
+<script src="report-template.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

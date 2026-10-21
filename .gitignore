@@ -1,0 +1,16 @@
+# ===== 运行时缓存与产物 =====
+.cache/
+reports/
+*.log
+
+# ===== 本地项目记忆（含工作日志，不应入库） =====
+.workbuddy/
+
+# ===== 依赖 =====
+node_modules/
+
+# ===== 系统 / 编辑器 =====
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
