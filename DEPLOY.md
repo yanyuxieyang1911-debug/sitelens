@@ -6,6 +6,9 @@ SiteLens 是一个**零第三方依赖**的 Node 全栈工具（`node server.js`
 
 服务监听 `0.0.0.0`，端口由环境变量 `PORT` 控制（默认 `8720`）。
 
+> 📖 **图文版一步步上线指引**：见 [`deploy-guide.html`](./deploy-guide.html)（含部署流程图 + Railway / Render 点击式步骤 + 故障排查）。
+> 🤖 仓库已配置 GitHub Actions 持续集成（`.github/workflows/ci.yml`）：每次 push/PR 自动做全量 `node --check` 语法校验 + 启动服务打 `/api/health` 健康检查。
+
 ---
 
 ## 1. 本地运行（开发 / 内网）
