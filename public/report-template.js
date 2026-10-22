@@ -136,13 +136,21 @@
   }
 
   var DIMENSION_META = [
-    { key: 'performance', label: '性能体验', icon: '⚡', weight: 25 },
-    { key: 'seo', label: 'SEO 基础', icon: '🔍', weight: 20 },
-    { key: 'marketing', label: '营销与追踪', icon: '📈', weight: 20 },
-    { key: 'tech', label: '技术健康', icon: '🧩', weight: 15 },
-    { key: 'security', label: '安全合规', icon: '🔒', weight: 10 },
-    { key: 'trust', label: '转化信任', icon: '🤝', weight: 10 },
+    { key: 'performance', label: '性能体验', icon: '⚡', weight: 22 },
+    { key: 'seo', label: 'SEO 基础', icon: '🔍', weight: 18 },
+    { key: 'marketing', label: '营销与追踪', icon: '📈', weight: 18 },
+    { key: 'tech', label: '技术健康', icon: '🧩', weight: 12 },
+    { key: 'security', label: '安全合规', icon: '🔒', weight: 8 },
+    { key: 'trust', label: '转化信任', icon: '🤝', weight: 8 },
+    { key: 'geo', label: 'GEO 优化', icon: '🤖', weight: 14 },
   ];
+
+  // 仅渲染数据中实际存在的维度（老样例报告无 geo 维度时不会崩）
+  function presentDimensions(data) {
+    return DIMENSION_META.filter(function (m) {
+      return data && data.scores && data.scores.dimensions && data.scores.dimensions[m.key];
+    });
+  }
 
   var CAT_LABELS = {
     cms: '建站系统 / CMS',
@@ -192,15 +200,17 @@
   }
 
   function drawCharts(d) {
-    var dims = DIMENSION_META.map(function (m) {
+    var dimsMeta = presentDimensions(d);
+    var dims = dimsMeta.map(function (m) {
       var v = (d.scores.dimensions[m.key] || {}).score || 0;
       return v;
     });
+    var baseline = dimsMeta.map(function () { return 75; });
     initChart('rp-radar', {
       color: ['#2563eb', '#cbd5e1'],
       tooltip: {},
       radar: {
-        indicator: DIMENSION_META.map(function (m) {
+        indicator: dimsMeta.map(function (m) {
           return { name: m.icon + ' ' + m.label, max: 100 };
         }),
         radius: '62%',
@@ -229,7 +239,7 @@
           name: '良好基准(75)',
           data: [
             {
-              value: [75, 75, 75, 75, 75, 75],
+              value: baseline,
               name: '良好基准 75',
               symbol: 'none',
               lineStyle: { type: 'dashed', color: '#94a3b8', width: 1.5 },
@@ -355,7 +365,8 @@
   }
 
   function buildDimCard(d) {
-    var rows = DIMENSION_META.map(function (m) {
+    var dimsMeta = presentDimensions(d);
+    var rows = dimsMeta.map(function (m) {
       var dim = d.scores.dimensions[m.key] || { score: 0, items: [] };
       var items = (dim.items || [])
         .map(function (it) {
@@ -369,10 +380,12 @@
         '<ul class="dim-detail">' + items + '</ul>'
       );
     }).join('');
+    var noteTxt = '权重：' + dimsMeta.map(function (m) { return m.label + ' ' + m.weight + '%'; }).join(' · ') +
+      '。雷达虚线为"良好"基准 75 分。';
     return el(
-      '<section class="card"><h3>📊 六维健康度 <span class="tier t1">评分模型</span></h3>' +
+      '<section class="card"><h3>📊 ' + dimsMeta.length + ' 维健康度 <span class="tier t1">评分模型</span></h3>' +
       '<div id="rp-radar" class="chart"></div>' + rows +
-      '<div class="note">权重：性能 25% · SEO 20% · 营销追踪 20% · 技术健康 15% · 安全合规 10% · 转化信任 10%。雷达虚线为"良好"基准 75 分。</div>' +
+      '<div class="note">' + esc(noteTxt) + '</div>' +
       '</section>'
     );
   }
@@ -446,9 +459,52 @@
       '<div>正文词数：<b>' + fmtInt(d.seo.wordCount.total) + '</b></div>' +
       '<div>robots.txt：<b>' + (crawl.robots && crawl.robots.found ? '存在' : '缺失') + '</b></div>' +
       '<div>sitemap.xml：<b>' + (crawl.sitemap && crawl.sitemap.found ? crawl.sitemap.urlCount + ' 个 URL' : '缺失') + '</b></div>' +
+      '<div>多语言 hreflang：<b>' + (d.seo.hreflangs && d.seo.hreflangs.length ? d.seo.hreflangs.length + ' 种' : '未声明') + '</b></div>' +
       '</div></div>' +
       '<table><thead><tr><th>检查项</th><th>结论</th><th>详情</th></tr></thead><tbody>' + rows + '</tbody></table>' +
       '<div class="note">SEO 检测基于首页单页源码；抓取时间 ' + esc(fmtDateTime(d.startedAt)) + '。SPA 站点经服务端渲染（SSR/SSG）后方可被爬虫完整索引。</div>' +
+      '</section>'
+    );
+  }
+
+  function buildGeoCard(d) {
+    var g = d.geo;
+    if (!g) return null;
+    var checks = g.checks || [];
+    var rows = checks
+      .map(function (c) {
+        var cls = c.severity === 'pass' ? 'ok' : c.severity === 'warn' ? 'warn' : 'err';
+        var txt = c.severity === 'pass' ? '就绪' : c.severity === 'warn' ? '待优化' : '风险';
+        return (
+          '<tr><td style="white-space:nowrap">' + esc(c.label) + '</td>' +
+          '<td><span class="pill ' + cls + '">' + txt + '</span></td>' +
+          '<td>' + esc(c.detail) + '</td></tr>'
+        );
+      })
+      .join('');
+    var bots = (g.aiCrawlers || [])
+      .map(function (b) {
+        var cls = b.status === 'allowed' ? 'ok' : b.status === 'blocked' ? 'err' : b.status === 'partial' ? 'warn' : 'na';
+        var txt = b.status === 'allowed' ? '允许' : b.status === 'blocked' ? '封禁' : b.status === 'partial' ? '部分限制' : '未声明';
+        return '<tr><td>' + esc(b.label) + '</td><td><span class="pill ' + cls + '">' + txt + '</span></td></tr>';
+      })
+      .join('');
+    var llm = g.llms || {};
+    var llmsHtml = llm.found
+      ? '<div class="kv" style="margin-top:8px"><div>llms.txt：<b>已发布</b></div><div>地址：<b class="mono">' + esc(llm.url || '') + '</b></div></div>'
+      : '<div class="note" style="margin-top:8px">未检测到 llms.txt（新兴标准：在根目录放置一份给 AI 引擎的站点摘要与允许抓取路径说明，可显著提升被 AI 引用概率）。</div>';
+    var blockedBanner = g.blocked
+      ? '<div class="warnbox" style="margin-bottom:10px">⚠️ 首页抓取被拦截，GEO 结论基于错误页，仅供参考。</div>'
+      : '';
+    return el(
+      '<section class="card"><h3>🤖 GEO 生成引擎优化 <span class="tier t2">AI 搜索就绪度</span></h3>' +
+      blockedBanner +
+      '<div class="warnbox" style="background:#eef2ff;border-color:#c7d2fe;color:#3730a3">GEO（Generative Engine Optimization）度量站点被 ChatGPT / Perplexity / Gemini / Claude / 豆包 等 AI 引擎检索并引用的<b>结构就绪度</b>，<b>非实际引用次数</b>。真实引用量需调用各平台 API 或品牌监测，本工具不抓取 AI 回答，相关结论一律标注为就绪度评估。</div>' +
+      (bots ? '<h4 style="margin:12px 0 6px;font-size:12.5px;color:#64748b">AI 爬虫在 robots.txt 中的指令</h4><table><thead><tr><th>AI 抓取代理</th><th>状态</th></tr></thead><tbody>' + bots + '</tbody></table>' : '') +
+      llmsHtml +
+      '<h4 style="margin:12px 0 6px;font-size:12.5px;color:#64748b">GEO 就绪度体检</h4>' +
+      '<table><thead><tr><th>维度</th><th>结论</th><th>详情</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div class="note">提高 GEO 的核心路径：发布 llms.txt + 完整 JSON-LD 实体（Organization / Product）+ 解除对 AI 爬虫的 robots 封禁 + 补齐信任页（About/Contact/Privacy/Terms）与 FAQ 结构化 + 增加权威引用与社交知识图谱。提升 SEO 的同时即为 GEO 打底，二者同源。</div>' +
       '</section>'
     );
   }
@@ -657,6 +713,8 @@
     root.appendChild(grid);
     root.appendChild(buildTrafficCard(data));
     root.appendChild(buildSeoCard(data));
+    var geoCard = buildGeoCard(data);
+    if (geoCard) root.appendChild(geoCard);
     var grid2 = el('<div class="grid2"></div>');
     grid2.appendChild(buildTechCard(data));
     grid2.appendChild(buildTrackerCard(data));

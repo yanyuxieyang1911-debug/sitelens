@@ -10,7 +10,8 @@
 
 ## 功能特性
 
-- **六维评分**：性能(25) / SEO(20) / 营销追踪(20) / 技术(15) / 安全(10) / 信任(10)
+- **七维评分**：性能(22) / SEO 基础(18) / 营销追踪(18) / 技术健康(12) / 安全合规(8) / 转化信任(8) / **GEO 生成引擎优化(14)**
+- **GEO（生成式引擎优化）维度**：度量站点被 ChatGPT / Perplexity / Gemini / Claude / 豆包 等 AI 引擎检索引用的**结构就绪度**，覆盖 llms.txt、AI 爬虫 robots 指令、JSON-LD 实体、E-E-A-T（作者/信任页）、内容可提取性(SPA 检测)、FAQ 可引用、权威引用、社交知识图谱、品牌一致性
 - **流量估算**：Tranco 全球排名为一手数据；月访问量基于排名的经验模型估算（报告内逐条标注口径）
 - **营销追踪识别**：Meta Pixel、Google Ads、TikTok Pixel、GTM、聊天工具、评价插件等，
   并区分「HTML 源码」与「同源 JS 资源」两种检测路径，降低 SPA 漏报
@@ -56,7 +57,8 @@ lib/
   traffic.js           Tranco 排名 + 经验模型月访问量估算
   seo.js               SEO / 元数据 / robots / 结构化数据
   techstack.js         ~90 条服务器 / CDN / 前端框架指纹
-  scoring.js           六维评分 + P0/P1/P2 建议引擎
+  geo.js               GEO / 生成式引擎优化（llms.txt / AI 爬虫指令 / 实体 / E-E-A-T）
+  scoring.js           七维评分 + P0/P1/P2 建议引擎
   pagespeed.js         PageSpeed Insights（不可达时优雅降级）
   rdap.js              域名注册年龄
 public/
