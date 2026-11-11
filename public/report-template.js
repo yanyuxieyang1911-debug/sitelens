@@ -67,6 +67,10 @@
     '.sugg .row{font-size:12.8px;margin:3px 0;color:#374151}',
     '.sugg .row i{font-style:normal;font-weight:600;color:#111827;margin-right:6px}',
     '.sugg .impact{color:#6b7280;font-size:12.3px}',
+    '.sugg-dim{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:99px;background:#eef2f7;color:#475569;margin-left:auto}',
+    '.sugg .row.action{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 10px;color:#166534}',
+    '.sugg .row.action i{color:#15803d}',
+    '.sugg-code{margin:8px 0 0;padding:10px 12px;background:#0f172a;color:#e2e8f0;border-radius:8px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word;overflow-x:auto}',
     '.p-group-title{font-size:13px;font-weight:700;margin:14px 0 8px}',
     '.p-group-title.p0{color:#dc2626}.p-group-title.p1{color:#b45309}.p-group-title.p2{color:#1d4ed8}',
     '.warnbox{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:12.8px;color:#92400e;margin-bottom:10px}',
@@ -78,7 +82,31 @@
     '.rp-footer li{margin:2px 0}',
     '.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11.5px;color:#475569;word-break:break-all}',
     '.empty{color:#9ca3af;font-size:12.5px;padding:8px 0}',
-    '@media print{.rp{background:#fff;padding:0}.rp .card,.verdict{box-shadow:none;break-inside:avoid}}'
+    '@media print{.rp{background:#fff;padding:0}.rp .card,.verdict{box-shadow:none;break-inside:avoid}}',
+    '.rp .intent-pill{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:99px;white-space:nowrap}',
+    '.intent-pill.info{background:#eff6ff;color:#1d4ed8}.intent-pill.comp{background:#f5f3ff;color:#6d28d9}.intent-pill.trans{background:#ecfdf5;color:#047857}.intent-pill.other{background:#f8fafc;color:#64748b}',
+    '.rp .cat-pill{font-size:10px;font-weight:600;padding:1px 6px;border-radius:6px;background:#f1f5f9;color:#475569}',
+    '.rp .kw-table td .term{font-weight:600;color:#0f172a}',
+    '.rp .layer{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;margin-bottom:12px}',
+    '.rp .layer h4{margin:0 0 10px;font-size:14px;display:flex;align-items:center;gap:8px}',
+    '.rp .metric{display:grid;grid-template-columns:1fr auto;gap:2px 12px;font-size:12.6px;padding:5px 0;border-bottom:1px dashed #f1f5f9}',
+    '.rp .metric:last-child{border-bottom:none}',
+    '.rp .metric .m-label{color:#374151}',
+    '.rp .metric .m-val{font-weight:600;color:#0f172a;text-align:right}',
+    '.rp .metric .m-src{font-size:11px;color:#9ca3af;grid-column:1/-1}',
+    '.rp .cannibal{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:12.6px}',
+    '.rp .cannibal b{color:#b45309}',
+    '.rp .chk{font-size:12.8px;padding:4px 0 4px 22px;position:relative;color:#374151}',
+    '.rp .chk::before{content:"☐";position:absolute;left:0;color:#94a3b8}',
+    '.rp .topic{font-size:12.6px;padding:6px 10px;background:#f8fafc;border:1px solid #eef2f7;border-radius:8px;margin-bottom:6px}',
+    '.rp .dist-bar{display:flex;height:10px;border-radius:99px;overflow:hidden;margin:6px 0 10px}',
+    '.rp .dist-bar i{height:100%}',
+    '.rp .sw-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;margin:12px 0}',
+    '.rp .sw-box.sw-disabled{background:#fffbeb;border-color:#fde68a}',
+    '.rp .sw-head{display:flex;align-items:center;gap:8px;font-size:13.5px;margin-bottom:6px}',
+    '.rp .sw-chart{width:100%;height:240px}',
+    '.rp .kw-table td.vol{font-weight:600;color:#1d4ed8;text-align:right;white-space:nowrap}',
+    '.rp .muted{color:#cbd5e1}'
   ].join('\n');
 
   if (typeof document !== 'undefined' && !document.getElementById('rp-style')) {
@@ -330,6 +358,37 @@
         },
       ],
     });
+
+    // 第三方流量估算：流量国家来源横向柱状图
+    if (
+      d.autoseo && d.autoseo.enabled && d.autoseo.keyword &&
+      d.autoseo.keyword.swAvailable && d.autoseo.keyword.countryShares &&
+      d.autoseo.keyword.countryShares.length
+    ) {
+      var cs = d.autoseo.keyword.countryShares;
+      initChart('swCountryChart', {
+        grid: { left: 8, right: 56, top: 10, bottom: 4, containLabel: true },
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function (p) { return p[0].name + '：' + p[0].value.toFixed(1) + '%'; } },
+        xAxis: { type: 'value', axisLabel: { formatter: '{value}%', color: '#94a3b8', fontSize: 11 }, splitLine: { lineStyle: { color: '#eef2f7' } } },
+        yAxis: {
+          type: 'category',
+          data: cs.map(function (c) { return c.country; }).reverse(),
+          axisLabel: { color: '#475569', fontSize: 11.5 },
+          axisLine: { lineStyle: { color: '#e2e8f0' } },
+          axisTick: { show: false },
+        },
+        series: [
+          {
+            type: 'bar',
+            barWidth: 14,
+            data: cs
+              .map(function (c) { return { value: +(c.share * 100).toFixed(2), itemStyle: { color: '#2563eb', borderRadius: [0, 4, 4, 0] } }; })
+              .reverse(),
+            label: { show: true, position: 'right', color: '#475569', fontSize: 11, formatter: '{c}%' },
+          },
+        ],
+      });
+    }
   }
 
   // ---------- 各区块 ----------
@@ -609,22 +668,26 @@
     var groups = { P0: [], P1: [], P2: [] };
     d.suggestions.forEach(function (s) { groups[s.priority].push(s); });
     var titleMap = { P0: 'P0 · 立即处理（影响流量/收录/转化）', P1: 'P1 · 尽快处理（明显短板）', P2: 'P2 · 优化项（锦上添花）' };
+    var dimLabel = { performance: '性能', seo: 'SEO 基础', marketing: '营销追踪', tech: '技术健康', security: '安全合规', trust: '转化信任', geo: 'GEO 生成引擎优化' };
     var html = '';
     ['P0', 'P1', 'P2'].forEach(function (pri) {
       if (!groups[pri].length) return;
       html += '<div class="p-group-title ' + pri.toLowerCase() + '">' + titleMap[pri] + ' · ' + groups[pri].length + ' 项</div>';
       groups[pri].forEach(function (s) {
+        var dl = dimLabel[s.dimension] || s.dimension || '';
         html +=
           '<div class="sugg ' + pri.toLowerCase() + '">' +
-          '<div class="sugg-head"><span class="pri">' + pri + '</span><b>' + esc(s.title) + '</b></div>' +
-          '<div class="row"><i>问题</i>' + esc(s.problem) + '</div>' +
-          '<div class="row"><i>做法</i>' + esc(s.action) + '</div>' +
+          '<div class="sugg-head"><span class="pri">' + pri + '</span><b>' + esc(s.title) + '</b>' + (dl ? '<span class="sugg-dim">' + esc(dl) + '</span>' : '') + '</div>' +
+          '<div class="row"><i>问题</i><span>' + esc(s.problem) + '</span></div>' +
+          '<div class="row action"><i>具体做法</i><span>' + esc(s.action) +
+            (s.actionCode ? '</span><pre class="sugg-code">' + esc(s.actionCode) + '</pre>' : '</span>') +
+          '</div>' +
           '<div class="row impact"><i>影响</i>' + esc(s.impact) + '</div>' +
           '</div>';
       });
     });
     if (!html) html = '<div class="empty">未发现明显问题，站点状态良好</div>';
-    return el('<section class="card"><h3>🛠 修改建议 <span class="tier t2">按优先级排序</span></h3>' + html + '</section>');
+    return el('<section class="card"><h3>🛠 修改建议 <span class="tier t2">按优先级排序 · 问题/做法/影响</span></h3>' + html + '</section>');
   }
 
   function buildPositivesCard(d) {
@@ -692,7 +755,8 @@
       '<ul>' +
       '<li>性能（TTFB/体积/压缩/重定向链）、SEO 要素、技术栈与像素、响应头、TLS/DNS：本工具直连测量与源码解析，<b>一手数据</b>；SEO 与技术栈仅覆盖首页及其同源 JS 资源。</li>' +
       '<li>Tranco 全球排名、Common Crawl 索引、RDAP 注册信息：<b>一手公开数据</b>。</li>' +
-      '<li>月访问量：基于 Tranco 排名的经验模型<b>估算</b>（非 SimilarWeb 一手流量），误差可达数倍，仅作数量级判断。</li>' +
+      '<li>月访问量：若已抓到 SimilarWeb 数据，则采用其<b>第三方模型估算</b>（非 Google 官方，量级可能偏差数倍）；否则回退到基于 Tranco 排名的经验模型<b>估算</b>，误差可达数倍，仅作数量级判断。</li>' +
+      '<li>关键词月度流量与流量国家来源：均来自 SimilarWeb 公开接口<b>第三方估算</b>，非站点真实 Analytics 数据，仅供方向参考。</li>' +
       '<li>PageSpeed Insights：Google Lighthouse <b>实验室数据</b>，与真实用户环境存在差异。</li>' +
       '<li>分析为单次采样，结果受网络波动、CDN 节点、Bot 防护与登录状态影响；建议连续多日测量取均值。</li>' +
       '</ul>' +
@@ -702,6 +766,197 @@
   }
 
   // ---------- 主渲染 ----------
+  function intentClass(i) {
+    return i === 'informational' ? 'info' : i === 'comparison' ? 'comp' : i === 'transactional' ? 'trans' : 'other';
+  }
+  function catLabel(c) {
+    return { core: '核心词', longtail: '长尾词', question: '问答词', competitor: '竞品词', brand: '品牌词' }[c] || c;
+  }
+  function renderMetric(label, m) {
+    var manual = m.manual;
+    var val = (m.value === null || m.value === undefined)
+      ? '<span class="mini-pill" style="background:#f8fafc;color:#94a3b8">需接入</span>'
+      : esc(String(m.value)) + (m.pass === true
+        ? ' <span class="mini-pill" style="background:#ecfdf5;color:#047857">达标</span>'
+        : m.pass === false ? ' <span class="mini-pill" style="background:#fef2f2;color:#b91c1c">未达标</span>' : '');
+    return '<div class="metric"><span class="m-label">' + esc(label) + (manual ? ' <span class="tier t3">手动</span>' : '') +
+      '</span><span class="m-val">' + val + '</span>' +
+      '<span class="m-src">' + esc(m.source || '') + (m.note ? ' · ' + esc(m.note) : '') + '</span></div>';
+  }
+
+  // 流量数字格式化：>=1万 显示「x.x万」，否则千分位
+  function fmtVol(n) {
+    if (n == null) return '<span class="muted">—</span>';
+    var v = Number(n);
+    if (!isFinite(v)) return '<span class="muted">—</span>';
+    if (v >= 10000) return (Math.round(v / 1000) / 10).toFixed(1).replace(/\.0$/, '') + '万';
+    return v.toLocaleString('en-US');
+  }
+  function fmtPct(share) {
+    if (share == null) return '—';
+    return (share * 100).toFixed(1) + '%';
+  }
+
+  function buildAutoSeoCard(data) {
+    var a = data && data.autoseo;
+    if (!a || !a.enabled) {
+      if (a && a.reason) {
+        return el('<section class="card"><h3>🚀 自动 SEO 策略 <span class="tier t3">未启用</span></h3>' +
+          '<div class="note">' + esc(a.reason) + '</div></section>');
+      }
+      return null;
+    }
+    var kw = a.keyword, content = a.content, off = a.offpage, layers = a.layers, rhythm = a.rhythm;
+    var html = '';
+
+    html += '<section class="card"><h3>🚀 自动 SEO 策略 <span class="tier t2">关键词 / 内容 / 外链 / 四层指标</span></h3>';
+    html += '<div class="note">基于 <b>' + a.pagesCrawled + '</b> 个已爬页面自动生成。带「<span class="tier t3">手动</span>」标记的指标需接入 GSC / Ahrefs / Semrush / GA4 回填，本工具不编造搜索量、排名与外链数字（与 SiteLens 口径一致）。</div>';
+
+    // ---- 关键词策略 ----
+    html += '<h4 style="margin:14px 0 6px;font-size:14px;color:#334155">① 关键词策略（自动抽取 + 意图 + 映射）</h4>';
+    var id = kw.intentDist, tot = (id.informational + id.comparison + id.transactional + id.other) || 1;
+    html += '<div class="dist-bar">' +
+      '<i style="width:' + (id.informational / tot * 100) + '%;background:#1d4ed8"></i>' +
+      '<i style="width:' + (id.comparison / tot * 100) + '%;background:#6d28d9"></i>' +
+      '<i style="width:' + (id.transactional / tot * 100) + '%;background:#047857"></i>' +
+      '<i style="width:' + (id.other / tot * 100) + '%;background:#94a3b8"></i></div>';
+    html += '<div class="chips" style="margin-bottom:10px">' +
+      '<span class="chip">信息型 <b>' + id.informational + '</b></span>' +
+      '<span class="chip">对比型 <b>' + id.comparison + '</b></span>' +
+      '<span class="chip">交易型 <b>' + id.transactional + '</b></span>' +
+      '<span class="chip">其他 <b>' + id.other + '</b></span></div>';
+
+    html += '<table class="kw-table"><thead><tr><th>关键词</th><th>意图</th><th>词类</th><th>命中页</th><th>权重</th><th>月度流量(估算)</th></tr></thead><tbody>';
+    html += kw.topKeywords.map(function (k) {
+      return '<tr><td class="term">' + esc(k.term) + '</td><td><span class="intent-pill ' + intentClass(k.intent) + '">' + esc(k.intentLabel) + '</span></td>' +
+        '<td><span class="cat-pill">' + esc(catLabel(k.category)) + '</span></td><td>' + k.pages + '</td><td>' + k.totalScore + '</td><td class="vol">' + fmtVol(k.monthlyVisits) + '</td></tr>';
+    }).join('');
+    html += '</tbody></table>';
+
+    // 第三方估算：关键词月度流量 + 流量国家来源（SimilarWeb）
+    html += '<div class="sw-box' + (kw.swAvailable ? '' : ' sw-disabled') + '">';
+    html += '<div class="sw-head"><b>🌍 第三方流量估算（SimilarWeb）</b>' +
+      (kw.swAvailable
+        ? '<span class="tier t2">已抓取</span>'
+        : '<span class="tier t3">抓取受限</span>') + '</div>';
+    if (kw.swAvailable) {
+      html += '<div class="note">数据来源：SimilarWeb 公开接口（<b>第三方模型估算，非 Google 官方</b>），量级可能与真实值偏差数倍，仅作参考。全站月访问估算：<b>' + fmtVol(kw.swMonthlyVisits) + '</b>。</div>';
+
+      // 国家来源：ECharts 横向柱状图 + 表格
+      if (kw.countryShares && kw.countryShares.length) {
+        html += '<h5 style="margin:10px 0 4px;font-size:13px;color:#334155">流量国家来源（Top ' + kw.countryShares.length + '）</h5>';
+        html += '<div class="sw-chart" id="swCountryChart"></div>';
+        html += '<div class="chips" style="margin-top:6px">' + kw.countryShares.slice(0, 8).map(function (c) {
+          return '<span class="chip">' + esc(c.country) + ' <b>' + fmtPct(c.share) + '</b></span>';
+        }).join('') + '</div>';
+      }
+
+      // 带量的外部分词（SimilarWeb 真实词 + 月度流量）
+      if (kw.swKeywords && kw.swKeywords.length) {
+        html += '<h5 style="margin:12px 0 4px;font-size:13px;color:#334155">外部分词与月度流量（SimilarWeb Top ' + kw.swKeywords.length + '）</h5>';
+        html += '<table class="kw-table"><thead><tr><th>关键词</th><th>月度流量(估算)</th><th>占站比重</th></tr></thead><tbody>' +
+          kw.swKeywords.map(function (k) {
+            return '<tr><td class="term">' + esc(k.term) + '</td><td class="vol">' + fmtVol(k.monthlyVisits) + '</td><td>' + fmtPct(k.share) + '</td></tr>';
+          }).join('') + '</tbody></table>';
+      }
+    } else {
+      html += '<div class="note">未能从 SimilarWeb 抓取到数据（' + esc(kw.swSource || '抓取受限') + '）。多为数据中心 IP 被 Bot 防护拦截；在你本机运行 <code>node server.js</code> 通常可正常获取。也可后续接入 GSC / Semrush 回填真实流量。</div>';
+    }
+    html += '</div>';
+
+    // 抢词检测
+    if (kw.cannibalization.length) {
+      html += '<div class="warnbox" style="margin:10px 0">⚠️ 检测到 <b>' + kw.cannibalization.length + '</b> 个关键词在多个页面重复重点优化（keyword cannibalization），会互相抢排名。建议为每个词指定唯一承接页，其余页用 canonical 或改写降权。</div>';
+      html += kw.cannibalization.slice(0, 8).map(function (c) {
+        return '<div class="cannibal"><b>' + esc(c.term) + '</b> <span class="intent-pill ' + intentClass(c.intent) + '">' + esc(c.intentLabel) + '</span> 同时出现在 ' + c.pages.length + ' 页：' + c.pages.map(esc).join(' · ') + '</div>';
+      }).join('');
+    } else {
+      html += '<div class="note" style="margin:10px 0">未检测到明显的同词多页抢排名问题。</div>';
+    }
+
+    // 页面定位审计 + 挖词扩展
+    html += '<div class="grid2" style="margin-top:10px"><div><b style="font-size:13px">单页关键词定位</b>' +
+      kw.pageTargeting.map(function (p) {
+        return '<div class="chk ' + (p.ok ? 'done' : '') + '">' + esc(p.url.replace(/^https?:\/\//, '')) + ' — 「' + esc(p.primaryKeyword || '—') + '」 ' + p.passCount + '/' + p.total + '</div>';
+      }).join('') + '</div>';
+    html += '<div><b style="font-size:13px">挖词扩展建议（种子：' + esc((kw.suggestions[0] && kw.suggestions[0].term) || '—') + '）</b>' +
+      kw.suggestions.map(function (s) {
+        return '<div class="topic"><span class="intent-pill ' + intentClass(s.intent) + '">' + esc(s.intentLabel) + '</span> <span class="cat-pill">' + esc(catLabel(s.category)) + '</span> ' + esc(s.term) + '<div style="color:#6b7280;font-size:11.5px">' + esc(s.why) + '</div></div>';
+      }).join('') + '</div></div>';
+
+    // ---- 内容 SEO / E-E-A-T ----
+    html += '<h4 style="margin:16px 0 6px;font-size:14px;color:#334155">② 内容 SEO 与 E-E-A-T 信号</h4>';
+    html += '<div class="chips" style="margin-bottom:8px"><span class="chip">E-E-A-T 评级 <b>' + esc(content.eeAtRating) + '</b>（' + content.eeAtScore + '/100）</span>' +
+      '<span class="chip">信任页 <b>' + content.haveMust + '/' + content.mustTotal + '</b></span>' +
+      '<span class="chip">薄弱页 <b>' + content.thinPages.length + '</b></span></div>';
+    html += '<div class="grid2"><div>' + content.trustSignals.map(function (t) {
+      return '<div class="chk ' + (t.found ? 'done' : '') + '">' + esc(t.label) + '</div>';
+    }).join('') + '</div>';
+    html += '<div><b style="font-size:12.5px;color:#64748b">待建内容选题（填补意图缺口）</b>' +
+      content.topicIdeas.map(function (t) {
+        return '<div class="topic"><span class="cat-pill">' + esc(t.type) + '</span> ' + esc(t.topic) + '</div>';
+      }).join('') + '</div></div>';
+    if (content.thinPages.length) {
+      html += '<div class="note">内容稀薄页（正文 &lt;300 词，建议 content refresh 重写/更新数据/合并）：' +
+        content.thinPages.map(function (p) { return esc(p.url.replace(/^https?:\/\//, '')) + '(' + p.words + '词)'; }).join(' · ') + '</div>';
+    }
+
+    // ---- 站外 SEO / 外链 ----
+    html += '<h4 style="margin:16px 0 6px;font-size:14px;color:#334155">③ 站外 SEO / 外链（健康度与流程）</h4>';
+    html += '<div class="note">' + esc(off.outboundProfile.note) + (off.outboundProfile.topDomains.length ? ' 出站域名：' + off.outboundProfile.topDomains.slice(0, 8).map(esc).join('、') : '') + '</div>';
+    html += '<div class="warnbox" style="background:#fff7ed;border-color:#fde68a;color:#92400e">外链数量、质量（DA/DR、垃圾占比）、锚文本分布需用 Ahrefs / Semrush / GSC 链接报告回填（见下方「需接入」）。反链健康度排查与 disavow 流程如下：</div>';
+    html += '<div class="grid2"><div><b style="font-size:12.5px;color:#64748b">反链健康度指标（需接入）</b>' +
+      off.backlinkNeeds.metrics.map(function (m) { return renderMetric(m.label, { value: null, source: m.source, manual: true, note: '' }); }).join('') + '</div>';
+    html += '<div><b style="font-size:12.5px;color:#64748b">Disavow 拒绝烂链流程</b>' +
+      off.disavowWorkflow.map(function (s, i) { return '<div class="chk">' + (i + 1) + '. ' + esc(s) + '</div>'; }).join('') + '</div></div>';
+    html += '<div class="note"><b>品牌提及与声誉监测：</b>' + off.brandMonitoring.map(esc).join(' · ') + '</div>';
+
+    // ---- 四层指标 ----
+    html += '<h4 style="margin:16px 0 6px;font-size:14px;color:#334155">④ 效果指标（四层，别只看排名）</h4>';
+    html += '<div class="layer"><h4>🌊 流量与排名层（过程）</h4>' +
+      renderMetric('全球排名', layers.traffic.globalRank) +
+      renderMetric('自然流量会话', layers.traffic.organicSessions) +
+      renderMetric('核心词前 10 数', layers.traffic.coreKeywordTop10) +
+      renderMetric('收录页面数/覆盖率', layers.traffic.indexedPages) +
+      renderMetric('月访问估算(SW)', layers.traffic.estimatedVisits) +
+      renderMetric('自然流量占比目标', layers.traffic.organicShareTarget) + '</div>';
+    html += '<div class="layer"><h4>🎯 转化层（核心业务）</h4>' +
+      renderMetric('自然询盘/线索', layers.conversion.leadsFromOrganic) +
+      renderMetric('落地页转化率', layers.conversion.landingCvr) +
+      renderMetric('自然渠道 CAC', layers.conversion.organicCac) +
+      renderMetric('词→线索归因', layers.conversion.kwToLeadAttribution) +
+      renderMetric('站内转化入口', layers.conversion.ctaPresent) + '</div>';
+    html += '<div class="layer"><h4>🧱 技术健康层（底线）</h4>' +
+      renderMetric('LCP', layers.technical.lcp) +
+      renderMetric('INP', layers.technical.inp) +
+      renderMetric('CLS', layers.technical.cls) +
+      renderMetric('HTTPS 覆盖率', layers.technical.httpsCoverage) +
+      renderMetric('抓取错误/死链', layers.technical.crawlErrors) +
+      renderMetric('混合内容', layers.technical.mixedContent) + '</div>';
+    html += '<div class="layer"><h4>💰 商业层（高级岗必背）</h4>' +
+      '<div class="note" style="margin-top:0">' + esc(layers.commercial.roi.formula) + ' — ' + esc(layers.commercial.roi.lag) + '</div>' +
+      renderMetric('人力成本', layers.commercial.roi.inputs.laborCost) +
+      renderMetric('工具费', layers.commercial.roi.inputs.toolCost) +
+      renderMetric('外链/内容预算', layers.commercial.roi.inputs.linkBudget) +
+      renderMetric('自然成交金额', layers.commercial.roi.inputs.deals) +
+      renderMetric('品牌词搜索增长', layers.commercial.brandSearchGrowth) +
+      renderMetric('漏斗累计贡献', layers.commercial.cumulativeContribution) + '</div>';
+
+    // ---- 节奏打法 ----
+    html += '<h4 style="margin:16px 0 6px;font-size:14px;color:#334155">⑤ 节奏打法（日 / 周 / 月 / 季）</h4>';
+    var rhythmGroups = [['每日', rhythm.daily], ['每周', rhythm.weekly], ['每月', rhythm.monthly], ['每季', rhythm.quarterly]];
+    html += '<div class="grid2">' + rhythmGroups.map(function (g) {
+      return '<div><b style="font-size:12.5px;color:#64748b">' + g[0] + '</b>' + g[1].map(function (s) { return '<div class="chk">' + esc(s) + '</div>'; }).join('') + '</div>';
+    }).join('') + '</div>';
+
+    // 口径
+    html += '<div class="rp-footer"><b>数据口径：</b><ul style="margin:4px 0 0;padding-left:18px">' +
+      a.dataTier.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></div>';
+
+    html += '</section>';
+    return el(html);
+  }
+
   function renderReport(data, mount) {
     if (!mount) throw new Error('renderReport 需要挂载节点');
     mount.innerHTML = '';
@@ -721,6 +976,8 @@
     root.appendChild(grid2);
     if (data.pagespeed && data.pagespeed.available) root.appendChild(buildPsiCard(data));
     root.appendChild(buildSuggestionsCard(data));
+    var autoSeo = buildAutoSeoCard(data);
+    if (autoSeo) root.appendChild(autoSeo);
     var pos = buildPositivesCard(data);
     if (pos) root.appendChild(pos);
     root.appendChild(buildAppendix(data));

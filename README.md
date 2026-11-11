@@ -19,6 +19,7 @@
 - **实时分析**：SSE 流式进度，前端边抓边渲染
 - **自包含报告**：ECharts 已 vendor 到 `public/vendor/`，导出的 HTML 报告完全离线自包含
 - **部署柔性**：后端不可达时前端自动进入「静态展示版」，不白屏
+- **自动 SEO 策略（AutoSEO）**：自动爬取内页（≤12 页，best-effort）抽取关键词，按**意图**（信息/对比/交易）与**词类**（核心/长尾/问答/竞品/品牌）分层；检测同词多页抢排名（keyword cannibalization）；评估内容 **E-E-A-T** 与信任页（About/Contact/Blog/FAQ…）；梳理外链健康度与 disavow 流程；输出**四层效果指标**（流量排名/转化/技术健康/商业）与**日/周/月/季节奏打法**。搜索量、真实排名、外链质量、转化等需接入 GSC / Ahrefs / Semrush / GA4 回填，工具不编造数字
 
 ---
 
@@ -58,6 +59,8 @@ lib/
   seo.js               SEO / 元数据 / robots / 结构化数据
   techstack.js         ~90 条服务器 / CDN / 前端框架指纹
   geo.js               GEO / 生成式引擎优化（llms.txt / AI 爬虫指令 / 实体 / E-E-A-T）
+  keywords.js          关键词抽取 / 意图分类 / 词类分层 / 映射 / 抢词检测 / 挖词扩展
+  autoseo.js           AutoSEO 编排：关键词策略 / 内容 E-E-A-T / 外链 / 四层指标 / 节奏
   scoring.js           七维评分 + P0/P1/P2 建议引擎
   pagespeed.js         PageSpeed Insights（不可达时优雅降级）
   rdap.js              域名注册年龄
@@ -67,6 +70,8 @@ public/
   samples/                example / allbirds / anker 三份样例报告
 test/
   ui-smoke.js          无头 UI 冒烟测试（42 项）
+  autoseo-unit.js       AutoSEO 纯函数单测（11 项）
+  autoseo-render.js     AutoSEO 报告 DOM 渲染测试
   static-fallback.js   静态降级 jsdom 测试（4 项）
 ```
 
