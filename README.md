@@ -13,6 +13,7 @@
 - **七维评分**：性能(22) / SEO 基础(18) / 营销追踪(18) / 技术健康(12) / 安全合规(8) / 转化信任(8) / **GEO 生成引擎优化(14)**
 - **GEO（生成式引擎优化）维度**：度量站点被 ChatGPT / Perplexity / Gemini / Claude / 豆包 等 AI 引擎检索引用的**结构就绪度**，覆盖 llms.txt、AI 爬虫 robots 指令、JSON-LD 实体、E-E-A-T（作者/信任页）、内容可提取性(SPA 检测)、FAQ 可引用、权威引用、社交知识图谱、品牌一致性
 - **流量估算**：Tranco 全球排名为一手数据；月访问量基于排名的经验模型估算（报告内逐条标注口径）
+- **第三方流量源（SimilarWeb）**：自动抓取 SimilarWeb 公开接口，给出**每个关键词的月度流量估算**、**流量国家来源分布**、全站月访问估算。被 Bot 防护拦截 / 网络受限时优雅降级并提示换本地网络，绝不编造数字（标注"第三方模型估算，非 Google 官方"）
 - **营销追踪识别**：Meta Pixel、Google Ads、TikTok Pixel、GTM、聊天工具、评价插件等，
   并区分「HTML 源码」与「同源 JS 资源」两种检测路径，降低 SPA 漏报
 - **防误报三机制**：HTTP≥400 / Cloudflare 挑战页拦截、跨主域跳转、GTM 容器内像素降级为「需人工核实」
@@ -60,6 +61,7 @@ lib/
   techstack.js         ~90 条服务器 / CDN / 前端框架指纹
   geo.js               GEO / 生成式引擎优化（llms.txt / AI 爬虫指令 / 实体 / E-E-A-T）
   keywords.js          关键词抽取 / 意图分类 / 词类分层 / 映射 / 抢词检测 / 挖词扩展
+  trafficsrc.js        SimilarWeb 公开接口抓取（月访问 / 关键词月度流量 / 国家来源），优雅降级
   autoseo.js           AutoSEO 编排：关键词策略 / 内容 E-E-A-T / 外链 / 四层指标 / 节奏
   scoring.js           七维评分 + P0/P1/P2 建议引擎
   pagespeed.js         PageSpeed Insights（不可达时优雅降级）
