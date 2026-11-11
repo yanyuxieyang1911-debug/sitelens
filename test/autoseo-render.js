@@ -85,7 +85,45 @@ for (const [name, pass] of checks) {
   console.log((pass ? '  ✓ ' : '  ✗ ') + name);
   if (!pass) ok = false;
 }
-// 老区块不应因新增而丢失
-if (!txt.includes('综合') && !txt.includes('维度')) { /* 样例可能无综合分文本，跳过 */ }
+
+// 第二场景：注入 Semrush + Trends 数据，验证新区块与图表 id 渲染
+const data2 = JSON.parse(JSON.stringify(data));
+data2.traffic = Object.assign({}, data2.traffic, {
+  sw: { available: false, reason: 'x' },
+  semrush: {
+    available: true,
+    source: 'Semrush Domain Overview（API，第三方估算，非 Google 官方）',
+    monthlyVisits: 1234567,
+    countryShares: [{ country: 'us', share: 0.4 }, { country: 'gb', share: 0.15 }],
+    organicKeywords: 5400,
+    topKeywords: [{ term: 'yoga mats', position: 1, volume: 90000, trafficPct: 8.5, estVisits: 104938, cpc: 2.1 }],
+  },
+  trends: {
+    available: true,
+    source: 'Google Trends（无需 key，相对热度 0-100）',
+    interestOverTime: [{ term: 'yoga mats', points: [{ time: 'Jan', value: 50 }, { time: 'Feb', value: 60 }] }],
+    byRegion: [{ country: 'United States', value: 100 }, { country: 'India', value: 60 }],
+  },
+});
+data2.autoseo = buildAutoSeo(data2);
+const mount2 = document.createElement('div');
+document.body.appendChild(mount2);
+let threw2 = null;
+try { window.renderReport(data2, mount2); } catch (e) { threw2 = e; }
+if (threw2) { console.error('✗ 第二场景 renderReport 抛错：', threw2.message); process.exit(1); }
+const t2 = mount2.innerHTML;
+const checks2 = [
+  ['Semrush 来源标记出现', t2.includes('Semrush')],
+  ['流量国家来源区块出现', t2.includes('流量国家来源')],
+  ['trends 折线图 id 存在', t2.includes('trendsLineChart')],
+  ['品牌搜索地域分布出现', t2.includes('品牌搜索地域分布')],
+  ['关键词表含 搜索量 列', t2.includes('搜索量')],
+  ['关键词表含 热度(Trends) 列', t2.includes('热度(Trends)')],
+];
+for (const [name, pass] of checks2) {
+  console.log((pass ? '  ✓ ' : '  ✗ ') + name);
+  if (!pass) ok = false;
+}
+
 console.log('\nautoseo 渲染测试 ' + (ok ? '通过' : '存在失败项'));
 process.exit(ok ? 0 : 1);

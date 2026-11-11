@@ -1,0 +1,3 @@
+{
+  "semrushApiKey": "在此填入你的 Semrush API key（不会进入版本库，config.json 已被 .gitignore 忽略）"
+}

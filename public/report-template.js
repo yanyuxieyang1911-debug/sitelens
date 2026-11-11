@@ -87,6 +87,8 @@
     '.intent-pill.info{background:#eff6ff;color:#1d4ed8}.intent-pill.comp{background:#f5f3ff;color:#6d28d9}.intent-pill.trans{background:#ecfdf5;color:#047857}.intent-pill.other{background:#f8fafc;color:#64748b}',
     '.rp .cat-pill{font-size:10px;font-weight:600;padding:1px 6px;border-radius:6px;background:#f1f5f9;color:#475569}',
     '.rp .kw-table td .term{font-weight:600;color:#0f172a}',
+    '.rp .kw-table td.trend{font-weight:600;color:#db2777;text-align:right;white-space:nowrap}',
+    '.rp .trends-box{background:#fdf2f8;border:1px solid #fbcfe8;border-radius:12px;padding:14px 16px;margin-top:12px}',
     '.rp .layer{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;margin-bottom:12px}',
     '.rp .layer h4{margin:0 0 10px;font-size:14px;display:flex;align-items:center;gap:8px}',
     '.rp .metric{display:grid;grid-template-columns:1fr auto;gap:2px 12px;font-size:12.6px;padding:5px 0;border-bottom:1px dashed #f1f5f9}',
@@ -387,6 +389,35 @@
             label: { show: true, position: 'right', color: '#475569', fontSize: 11, formatter: '{c}%' },
           },
         ],
+      });
+    }
+
+    // Google Trends：关键词搜索热度趋势（相对 0-100，多词折线）
+    if (
+      d.autoseo && d.autoseo.enabled && d.autoseo.keyword &&
+      d.autoseo.keyword.trendsAvailable && d.autoseo.keyword.trendsOverTime &&
+      d.autoseo.keyword.trendsOverTime.length
+    ) {
+      var series = d.autoseo.keyword.trendsOverTime;
+      var times = (series[0] && series[0].points) ? series[0].points.map(function (p) { return p.time; }) : [];
+      var palette = ['#2563eb', '#16a34a', '#db2777', '#ea580c', '#7c3aed'];
+      initChart('trendsLineChart', {
+        grid: { left: 8, right: 16, top: 28, bottom: 4, containLabel: true },
+        tooltip: { trigger: 'axis' },
+        legend: { data: series.map(function (s) { return s.term; }), top: 0, textStyle: { fontSize: 11, color: '#475569' }, type: 'scroll' },
+        xAxis: { type: 'category', data: times, axisLabel: { color: '#94a3b8', fontSize: 10, interval: Math.ceil(times.length / 6) }, axisLine: { lineStyle: { color: '#e2e8f0' } } },
+        yAxis: { type: 'value', max: 100, axisLabel: { color: '#94a3b8', fontSize: 11 }, splitLine: { lineStyle: { color: '#eef2f7' } } },
+        series: series.map(function (s, i) {
+          return {
+            name: s.term,
+            type: 'line',
+            smooth: true,
+            showSymbol: false,
+            data: s.points.map(function (p) { return p.value; }),
+            itemStyle: { color: palette[i % palette.length] },
+            lineStyle: { width: 2 },
+          };
+        }),
       });
     }
   }
@@ -755,8 +786,8 @@
       '<ul>' +
       '<li>性能（TTFB/体积/压缩/重定向链）、SEO 要素、技术栈与像素、响应头、TLS/DNS：本工具直连测量与源码解析，<b>一手数据</b>；SEO 与技术栈仅覆盖首页及其同源 JS 资源。</li>' +
       '<li>Tranco 全球排名、Common Crawl 索引、RDAP 注册信息：<b>一手公开数据</b>。</li>' +
-      '<li>月访问量：若已抓到 SimilarWeb 数据，则采用其<b>第三方模型估算</b>（非 Google 官方，量级可能偏差数倍）；否则回退到基于 Tranco 排名的经验模型<b>估算</b>，误差可达数倍，仅作数量级判断。</li>' +
-      '<li>关键词月度流量与流量国家来源：均来自 SimilarWeb 公开接口<b>第三方估算</b>，非站点真实 Analytics 数据，仅供方向参考。</li>' +
+      '<li>月访问量与流量国家来源：优先采用 <b>Semrush API</b> 估算（需配置 key），否则回退 <b>SimilarWeb</b> 公开接口估算（非 Google 官方，量级可能偏差数倍）。均为第三方模型估算，非站点真实 Analytics 数据。</li>' +
+      '<li>关键词月度流量 / 搜索量：来自 Semrush（词级估算流量 nq 搜索量）或 SimilarWeb 估算；Google Trends 给出的是关键词<b>相对搜索热度 0-100</b>（非搜索量/流量绝对值），用于趋势判断。</li>' +
       '<li>PageSpeed Insights：Google Lighthouse <b>实验室数据</b>，与真实用户环境存在差异。</li>' +
       '<li>分析为单次采样，结果受网络波动、CDN 节点、Bot 防护与登录状态影响；建议连续多日测量取均值。</li>' +
       '</ul>' +
@@ -796,6 +827,17 @@
     if (share == null) return '—';
     return (share * 100).toFixed(1) + '%';
   }
+  // Google Trends 相对热度：0-100 整数，null 显示 —
+  function fmtTrend(n) {
+    if (n == null) return '<span class="muted">—</span>';
+    var v = Number(n);
+    if (!isFinite(v)) return '<span class="muted">—</span>';
+    return v + '';
+  }
+  // 是否优先使用 Semrush 作为流量来源
+  function smOkLabel(source) {
+    return /semrush/i.test(source || '');
+  }
 
   function buildAutoSeoCard(data) {
     var a = data && data.autoseo;
@@ -826,41 +868,56 @@
       '<span class="chip">交易型 <b>' + id.transactional + '</b></span>' +
       '<span class="chip">其他 <b>' + id.other + '</b></span></div>';
 
-    html += '<table class="kw-table"><thead><tr><th>关键词</th><th>意图</th><th>词类</th><th>命中页</th><th>权重</th><th>月度流量(估算)</th></tr></thead><tbody>';
+    html += '<table class="kw-table"><thead><tr><th>关键词</th><th>意图</th><th>词类</th><th>命中页</th><th>权重</th><th>月度流量(估算)</th><th>搜索量</th><th>热度(Trends)</th></tr></thead><tbody>';
     html += kw.topKeywords.map(function (k) {
       return '<tr><td class="term">' + esc(k.term) + '</td><td><span class="intent-pill ' + intentClass(k.intent) + '">' + esc(k.intentLabel) + '</span></td>' +
-        '<td><span class="cat-pill">' + esc(catLabel(k.category)) + '</span></td><td>' + k.pages + '</td><td>' + k.totalScore + '</td><td class="vol">' + fmtVol(k.monthlyVisits) + '</td></tr>';
+        '<td><span class="cat-pill">' + esc(catLabel(k.category)) + '</span></td><td>' + k.pages + '</td><td>' + k.totalScore + '</td><td class="vol">' + fmtVol(k.monthlyVisits) + '</td><td>' + fmtVol(k.searchVolume) + '</td><td class="trend">' + fmtTrend(k.trendInterest) + '</td></tr>';
     }).join('');
     html += '</tbody></table>';
 
-    // 第三方估算：关键词月度流量 + 流量国家来源（SimilarWeb）
+    // 第三方流量估算：Semrush（优先）/ SimilarWeb + Google Trends
     html += '<div class="sw-box' + (kw.swAvailable ? '' : ' sw-disabled') + '">';
-    html += '<div class="sw-head"><b>🌍 第三方流量估算（SimilarWeb）</b>' +
+    html += '<div class="sw-head"><b>🌍 第三方流量估算' +
+      (smOkLabel(kw.swSource) ? '（Semrush）' : '（SimilarWeb）') + '</b>' +
       (kw.swAvailable
         ? '<span class="tier t2">已抓取</span>'
         : '<span class="tier t3">抓取受限</span>') + '</div>';
     if (kw.swAvailable) {
-      html += '<div class="note">数据来源：SimilarWeb 公开接口（<b>第三方模型估算，非 Google 官方</b>），量级可能与真实值偏差数倍，仅作参考。全站月访问估算：<b>' + fmtVol(kw.swMonthlyVisits) + '</b>。</div>';
+      html += '<div class="note">数据来源：' + esc(kw.swSource || '第三方估算') + '（<b>第三方模型估算，非 Google 官方</b>），量级可能与真实值偏差数倍，仅作参考。全站月访问估算：<b>' + fmtVol(kw.swMonthlyVisits) + '</b>。</div>';
 
       // 国家来源：ECharts 横向柱状图 + 表格
       if (kw.countryShares && kw.countryShares.length) {
-        html += '<h5 style="margin:10px 0 4px;font-size:13px;color:#334155">流量国家来源（Top ' + kw.countryShares.length + '）</h5>';
+        html += '<h5 style="margin:10px 0 4px;font-size:13px;color:#334155">流量国家来源（Top ' + kw.countryShares.length + '，' + (smOkLabel(kw.swSource) ? 'Semrush' : 'SimilarWeb') + '）</h5>';
         html += '<div class="sw-chart" id="swCountryChart"></div>';
         html += '<div class="chips" style="margin-top:6px">' + kw.countryShares.slice(0, 8).map(function (c) {
           return '<span class="chip">' + esc(c.country) + ' <b>' + fmtPct(c.share) + '</b></span>';
         }).join('') + '</div>';
       }
 
-      // 带量的外部分词（SimilarWeb 真实词 + 月度流量）
+      // 带量的外部分词（Semrush/SW 真实词 + 月度流量）
       if (kw.swKeywords && kw.swKeywords.length) {
-        html += '<h5 style="margin:12px 0 4px;font-size:13px;color:#334155">外部分词与月度流量（SimilarWeb Top ' + kw.swKeywords.length + '）</h5>';
+        html += '<h5 style="margin:12px 0 4px;font-size:13px;color:#334155">外部分词与月度流量（' + (smOkLabel(kw.swSource) ? 'Semrush' : 'SimilarWeb') + ' Top ' + kw.swKeywords.length + '）</h5>';
         html += '<table class="kw-table"><thead><tr><th>关键词</th><th>月度流量(估算)</th><th>占站比重</th></tr></thead><tbody>' +
           kw.swKeywords.map(function (k) {
             return '<tr><td class="term">' + esc(k.term) + '</td><td class="vol">' + fmtVol(k.monthlyVisits) + '</td><td>' + fmtPct(k.share) + '</td></tr>';
           }).join('') + '</tbody></table>';
       }
     } else {
-      html += '<div class="note">未能从 SimilarWeb 抓取到数据（' + esc(kw.swSource || '抓取受限') + '）。多为数据中心 IP 被 Bot 防护拦截；在你本机运行 <code>node server.js</code> 通常可正常获取。也可后续接入 GSC / Semrush 回填真实流量。</div>';
+      html += '<div class="note">未能抓取到第三方流量数据（' + esc(kw.swSource || '抓取受限') + '）。Semrush 需配置 API key（config.json 或环境变量 SEMRUSH_API_KEY）；SimilarWeb/Google Trends 多为数据中心 IP 被 Bot 防护拦截，在你本机运行 <code>node server.js</code> 通常可正常获取。</div>';
+    }
+
+    // Google Trends：关键词搜索趋势（相对热度）+ 品牌搜索地域分布
+    if (kw.trendsAvailable && kw.trendsOverTime && kw.trendsOverTime.length) {
+      html += '<div class="trends-box"><div class="sw-head"><b>📈 关键词搜索趋势（Google Trends）</b><span class="tier t2">已抓取</span></div>';
+      html += '<div class="note">Google Trends 给出的是<b>相对搜索热度（0-100）</b>，不是搜索量或流量绝对值；用于判断关键词的上升/下降趋势，指导内容排期。</div>';
+      html += '<div class="sw-chart" id="trendsLineChart"></div>';
+      if (kw.trendsByRegion && kw.trendsByRegion.length) {
+        html += '<h5 style="margin:12px 0 4px;font-size:13px;color:#334155">品牌搜索地域分布（Google Trends，相对热度 Top ' + kw.trendsByRegion.length + '）</h5>';
+        html += '<div class="chips" style="margin-top:6px">' + kw.trendsByRegion.slice(0, 10).map(function (c) {
+          return '<span class="chip">' + esc(c.country) + ' <b>' + (c.value != null ? c.value : '—') + '</b></span>';
+        }).join('') + '</div>';
+      }
+      html += '</div>';
     }
     html += '</div>';
 

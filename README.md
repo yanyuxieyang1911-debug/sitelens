@@ -13,7 +13,8 @@
 - **七维评分**：性能(22) / SEO 基础(18) / 营销追踪(18) / 技术健康(12) / 安全合规(8) / 转化信任(8) / **GEO 生成引擎优化(14)**
 - **GEO（生成式引擎优化）维度**：度量站点被 ChatGPT / Perplexity / Gemini / Claude / 豆包 等 AI 引擎检索引用的**结构就绪度**，覆盖 llms.txt、AI 爬虫 robots 指令、JSON-LD 实体、E-E-A-T（作者/信任页）、内容可提取性(SPA 检测)、FAQ 可引用、权威引用、社交知识图谱、品牌一致性
 - **流量估算**：Tranco 全球排名为一手数据；月访问量基于排名的经验模型估算（报告内逐条标注口径）
-- **第三方流量源（SimilarWeb）**：自动抓取 SimilarWeb 公开接口，给出**每个关键词的月度流量估算**、**流量国家来源分布**、全站月访问估算。被 Bot 防护拦截 / 网络受限时优雅降级并提示换本地网络，绝不编造数字（标注"第三方模型估算，非 Google 官方"）
+- **第三方流量源（Semrush 优先 / SimilarWeb 回退）**：自动抓取 Semrush Domain Overview API（需 key）或 SimilarWeb 公开接口，给出**全站月访问估算**、**流量国家来源分布**、**每个关键词的搜索量与月度流量估算**。Semrush 未配置 key 时回退 SimilarWeb。被 Bot 防护拦截 / 网络受限 / 无 key 时优雅降级并提示，绝不编造数字（标注"第三方模型估算，非 Google 官方"）
+- **Google Trends（无需 key）**：自动抓取关键词搜索热度随时间趋势（相对 0-100，非绝对值）与品牌搜索地域分布，用于判断关键词上升/下降趋势、指导内容排期
 - **营销追踪识别**：Meta Pixel、Google Ads、TikTok Pixel、GTM、聊天工具、评价插件等，
   并区分「HTML 源码」与「同源 JS 资源」两种检测路径，降低 SPA 漏报
 - **防误报三机制**：HTTP≥400 / Cloudflare 挑战页拦截、跨主域跳转、GTM 容器内像素降级为「需人工核实」
@@ -37,6 +38,9 @@ node server.js
 | --- | --- | --- |
 | `PORT` | 监听端口 | `8720` |
 | `PSI_API_KEY` | Google PageSpeed Insights 密钥（免密钥也能用，配置后提升配额） | 空 |
+| `SEMRUSH_API_KEY` | Semrush API key（配置后用 Semrush 取更准的月访问 / 国家来源 / 关键词搜索量，否则回退 SimilarWeb） | 空 |
+
+> 也可把 key 放进项目根目录的 `config.json`（`{ "semrushApiKey": "你的key" }`），该文件已被 `.gitignore` 忽略，不会进入版本库。参考见 `config.json.example`。
 
 ---
 
@@ -62,6 +66,8 @@ lib/
   geo.js               GEO / 生成式引擎优化（llms.txt / AI 爬虫指令 / 实体 / E-E-A-T）
   keywords.js          关键词抽取 / 意图分类 / 词类分层 / 映射 / 抢词检测 / 挖词扩展
   trafficsrc.js        SimilarWeb 公开接口抓取（月访问 / 关键词月度流量 / 国家来源），优雅降级
+  semrush.js           Semrush Domain Overview API（key 模式）：月访问 / 国家来源 / 关键词搜索量与词级流量
+  trends.js            Google Trends（无需 key）：关键词搜索热度趋势 + 品牌搜索地域分布
   autoseo.js           AutoSEO 编排：关键词策略 / 内容 E-E-A-T / 外链 / 四层指标 / 节奏
   scoring.js           七维评分 + P0/P1/P2 建议引擎
   pagespeed.js         PageSpeed Insights（不可达时优雅降级）
@@ -73,7 +79,9 @@ public/
 test/
   ui-smoke.js          无头 UI 冒烟测试（42 项）
   autoseo-unit.js       AutoSEO 纯函数单测（11 项）
-  autoseo-render.js     AutoSEO 报告 DOM 渲染测试
+  trafficsrc-unit.js    SimilarWeb 解析 + 装配单测
+  semrush-trends-unit.js Semrush / Trends 解析 + 装配单测（23 项）
+  autoseo-render.js     AutoSEO 报告 DOM 渲染测试（含 Semrush+Trends 场景）
   static-fallback.js   静态降级 jsdom 测试（4 项）
 ```
 
