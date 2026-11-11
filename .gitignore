@@ -17,3 +17,6 @@ node_modules/
 Thumbs.db
 .idea/
 .vscode/
+
+# ===== API 推送临时目录（含 token 的 curl 配置，禁止入库） =====
+.gh-tmp/

@@ -145,11 +145,23 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
+  let semrush = '';
+  try {
+    const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
+    semrush = cfg.semrushApiKey || '';
+  } catch (e) {}
+  if (process.env.SEMRUSH_API_KEY) semrush = process.env.SEMRUSH_API_KEY;
   console.log('');
   console.log('  📊 SiteLens 独立站分析工具已启动');
   console.log('  ------------------------------------');
   console.log('  本地访问:  http://localhost:' + PORT);
   console.log('  分析接口:  /api/analyze?domain=example.com');
+  console.log(
+    '  Semrush :  ' +
+      (semrush
+        ? '已配置（' + (semrush.length > 8 ? semrush.slice(0, 4) + '****' + semrush.slice(-4) : '****') + '）'
+        : '未配置 → 关键词搜索量/国家来源走 SimilarWeb 回退；配置：node scripts/set-semrush-key.js')
+  );
   console.log('  退出:      Ctrl + C');
   console.log('');
 });

@@ -41,6 +41,14 @@ node server.js
 | `SEMRUSH_API_KEY` | Semrush API key（配置后用 Semrush 取更准的月访问 / 国家来源 / 关键词搜索量，否则回退 SimilarWeb） | 空 |
 
 > 也可把 key 放进项目根目录的 `config.json`（`{ "semrushApiKey": "你的key" }`），该文件已被 `.gitignore` 忽略，不会进入版本库。参考见 `config.json.example`。
+>
+> 不想手改文件就用脚本（输入不回显，key 不会留在命令历史里）：
+> ```bash
+> node scripts/set-semrush-key.js          # 交互输入
+> node scripts/set-semrush-key.js --show   # 查看当前 key（脱敏）与来源
+> node scripts/set-semrush-key.js --clear  # 清除
+> ```
+> 服务启动时会打印 Semrush 是否已配置，未配置则提示配置命令。
 
 ---
 
@@ -50,6 +58,21 @@ node server.js
 node scripts/export-report.js example.com
 # 生成 reports/sitelens-example.com.html（自包含单文件）
 ```
+
+---
+
+## 推送代码（git 协议被拦截时的备用通道）
+
+如果所在网络挡掉了 `github.com` 的 git 协议（`git push` 报 `CONNECT tunnel failed, 502` / 超时），但 `api.github.com` 可达，可用 Git Data API 推送：
+
+```bash
+GH_TOKEN=ghp_xxx node scripts/push-via-api.js --dry-run   # 先看会推什么
+GH_TOKEN=ghp_xxx node scripts/push-via-api.js             # 真正推送
+```
+
+- token 只写进临时 curl 配置（用完即删），不进命令行参数、不进日志、不进版本库。
+- 远端 head 在本地存在且是祖先时**逐条重放提交并保留原 SHA**；否则退回**整树同步**（内容一致、SHA 会变）。
+- token 只有 `repo` scope 时 GitHub 拒绝经 API 写 `.github/workflows/` 下的文件（404），脚本会自动跳过并提示，其余文件照推。
 
 ---
 
@@ -76,6 +99,10 @@ public/
   index.html  app.js  report-template.js
   vendor/echarts.min.js   本地化图表库（自包含报告依赖）
   samples/                example / allbirds / anker 三份样例报告
+scripts/
+  export-report.js      CLI 导出自包含 HTML 报告
+  set-semrush-key.js    配置 / 查看 / 清除 Semrush API key（输入不回显）
+  push-via-api.js       走 GitHub Git Data API 推送（git 协议被拦时的备用通道）
 test/
   ui-smoke.js          无头 UI 冒烟测试（42 项）
   autoseo-unit.js       AutoSEO 纯函数单测（11 项）
